@@ -1,0 +1,25 @@
+node {
+   
+    stage('git checkout') { 
+        // Get some code from a GitHub repository
+         git 'https://github.com/Munny20/star-agile-insurance-project.git'
+       
+}
+    stage('maven build'){
+         sh 'mvn clean package'
+    }
+    
+    stage('build docker image'){
+         sh 'docker build -t pravallikamunny/insure-me:1.0 .'
+         
+    }
+    stage('push docker image into dockerhub'){
+        withCredentials([string(credentialsId: 'docker-password', variable: 'munny')]) {
+          sh "docker login -u pravallikamunny -p ${munny}"
+          sh 'docker push pravallikamunny/insure-me:1.0'
+    }
+    stage('configure and deploy  the application into test-server  '){
+           ansiblePlaybook become: true, credentialsId: 'ssh-keygen', disableHostKeyChecking: true, installation: 'Ansible', inventory: '/etc/ansible/hosts/', playbook: 'configure-test.yml'
+    }
+}
+}
